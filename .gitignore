@@ -1,0 +1,47 @@
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.env
+.env.local
+.venv/
+
+# Logs
+logs/
+*.log
+
+# Alembic migrations cache
+migrations/versions/
+
+# Database
+*.sqlite3
+*.db
+instance/
+__pycache__/
+
+# Python Package Files
+*.egg-info/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Pytest
+.cache/
+.tox/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
