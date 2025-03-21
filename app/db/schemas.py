@@ -1,21 +1,27 @@
 from pydantic import BaseModel,ConfigDict,Field,EmailStr
 from fastapi import Form
-from typing import List
+from typing import List,Literal
 
 password_regex = r"^[A-Za-z\d!@#$%^&*()_+=-]{8,}$"
 
 
-class UserCreate(BaseModel):
-    username:str
-    email:EmailStr
-    password:str=Field(...,min_length=8,pattern=password_regex)
-    role:str|None=None
+class UserCreate:
+    def __init__(
+        self,
+        username: str = Form(...),
+        email: EmailStr = Form(...),
+        password: str = Form(..., min_length=8, regex=password_regex),
+        role: Literal["User", "Admin"] = Form("User")
+    ):
+        self.username = username
+        self.email = email
+        self.password = password
+        self.role = role
 
     # Token schema
 class Token(BaseModel):
     access_token: str
     token_type: str
-    user:int
 
 class UserResponse(BaseModel):
     id: int
