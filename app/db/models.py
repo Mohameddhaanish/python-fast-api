@@ -23,7 +23,8 @@ class Product(Base):
     description = Column(Text,nullable=False)
     stock = Column(Integer, default=0)
     user_id=Column(Integer,ForeignKey('users.id'))
-
+    category_id=Column(Integer,ForeignKey("categories.id"))
+    
     user = relationship("User", back_populates="products")
     category=relationship("Category",back_populates="products")
 
