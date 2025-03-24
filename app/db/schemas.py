@@ -18,7 +18,6 @@ class UserCreate:
         self.password = password
         self.role = role
 
-    # Token schema
 class Token(BaseModel):
     access_token: str
     token_type: str
