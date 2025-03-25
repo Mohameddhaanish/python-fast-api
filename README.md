@@ -1,5 +1,8 @@
 # python-fast-api
 
+#Database Architecture diagram link for eCommerce platform
+https://fabric.inc/blog/commerce/ecommerce-database-design-example
+
 1️⃣ User Management
 User Registration
 
