@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Float, Integer, String,ForeignKey,Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
-
+from typing import List
 Base = declarative_base()  # Move Base here
 class User(Base):
     __tablename__ = 'users'
@@ -12,7 +12,22 @@ class User(Base):
     hashed_password=Column(String(255))
     role=Column(String(255) ,default="user",nullable=False)
 
-    products = relationship("Product", back_populates="user")
+    address=relationship("UserAddress",back_populates="user",cascade="all, delete-orphan")
+
+class UserAddress(Base):
+    __tablename__="user_address"
+
+    id = Column(Integer, primary_key=True, index=True,autoincrement=True)
+    user_id=Column(Integer,ForeignKey("users.id",ondelete="CASCADE"),index=True)
+    address_line1=Column(String(255))
+    address_line2=Column(String(255))
+    city=Column(String(255))
+    postal_code=Column(String(255))
+    country=Column(String(255))
+    telephone=Column(String(255))
+    mobile=Column(String(255))
+
+    user=relationship("User",back_populates="address")
 
 class Product(Base):
     __tablename__ = 'products'
@@ -24,9 +39,7 @@ class Product(Base):
     stock = Column(Integer, default=0)
     user_id=Column(Integer,ForeignKey('users.id'))
     category_id=Column(Integer,ForeignKey("categories.id"))
-    
-    user = relationship("User", back_populates="products")
-    category=relationship("Category",back_populates="products")
+
 
 class Category(Base):
     __tablename__ = "categories"
@@ -39,8 +52,6 @@ class Category(Base):
     #for self referencng purpose
     parent=relationship("Category" ,remote_side=[id],backref="subcategories")
 
-    # Relationship with Products
-    products=relationship("Product",back_populates="category")
 
 
 
