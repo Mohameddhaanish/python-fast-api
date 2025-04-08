@@ -6,13 +6,15 @@ from app.db.crud import create_user,get_user_by_userName,authenticate_user
 from app.core.config import settings
 from datetime import timedelta
 from app.core.security import create_access_token
+from app.db.schemas import AdminTypeCreate
+from app.services.auth_service import append_admin_type
 
 router=APIRouter()
 
 @router.post('/signup', response_model=Token)
 async def signUp(user: UserCreate = Depends(), db: Session = Depends(get_db)):
     # Check if user already exists
-    db_user = get_user_by_userName(db, user.username)
+    db_user = get_user_by_userName(db, user.username,user.role)
     if db_user:
         raise HTTPException(status_code=400, detail="User Already Registered")
 
@@ -22,7 +24,7 @@ async def signUp(user: UserCreate = Depends(), db: Session = Depends(get_db)):
     # Generate JWT Token
     access_expire_time = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"user_id": created_user.id, "user_email": created_user.email, "role": created_user.role},
+        data={"user_id": created_user.id, "user_email": created_user.email, "role": created_user.role,"permission":created_user.permission},
         expires_delta=access_expire_time
     )
 
@@ -35,7 +37,7 @@ async def sign_in(form_data:LoginRequest,db:Session=Depends(get_db)):
    if not user:
     raise HTTPException(status_code=404, detail="Incorrect username or password!")
    access_token_expire=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-   access_token=create_access_token(data={"user_id":user.id,"user_email":user.email},expires_delta=access_token_expire)
+   access_token=create_access_token(data={"user_id":user.id,"user_email":user.email, "role": user.role,"permission":user.permission},expires_delta=access_token_expire)
    return {"access_token":access_token,"token_type":"bearer","user":user.id}
 
 #Admin Login
@@ -45,5 +47,11 @@ async def sign_in(form_data:LoginRequest,db:Session=Depends(get_db)):
    if not user:
     raise HTTPException(status_code=404, detail="Incorrect username or password!")
    access_token_expire=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-   access_token=create_access_token(data={"user_id":user.id,"user_email":user.email},expires_delta=access_token_expire)
+   access_token=create_access_token(data={"user_id":user.id,"user_email":user.email, "role": user.role,"permission":user.permission},expires_delta=access_token_expire)
    return {"access_token":access_token,"token_type":"bearer","user":user.id}
+
+@router.post("/create_admin_type")
+def create_admin_type( 
+    db: Session = Depends(get_db),admin_type_details:AdminTypeCreate=Depends()):
+    admin_type=append_admin_type(db=db,admin_type_details=admin_type_details)
+    return admin_type

@@ -2,7 +2,6 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 from app.db.session import Base  # Ensure correct import path
-from app.db.models import User, Product  # Ensure models are imported
 
 config = context.config
 

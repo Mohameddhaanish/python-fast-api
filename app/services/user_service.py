@@ -1,6 +1,6 @@
-from app.db.schemas import UserAddressSchema
+from app.db.schemas import UserAddressSchema,UserPaymentDetails
 from sqlalchemy.orm import Session,joinedload
-from app.db.models import UserAddress,User
+from app.db.models import UserAddress,UserPayment
 
 
 def create_user_address(db:Session,user_address_details:UserAddressSchema,current_user:int):
@@ -14,3 +14,15 @@ def get_user_address(db:Session,current_user:int):
     # return db.query(UserAddress).options(joinedload(UserAddress.user)).filter(UserAddress.user_id == current_user).all()
     # return db.query(User,UserAddress).outerjoin(UserAddress,User.id==UserAddress.user_id).filter(User.id==current_user).all()
     return db.query(UserAddress).filter(UserAddress.user_id == current_user).all() 
+
+def add_payment_details(db:Session,current_user:int,payment_details:UserPaymentDetails):
+    payment_details=UserPayment(user_id=current_user,**payment_details.__dict__)
+    db.add(payment_details)
+    db.commit()
+    db.refresh(payment_details)
+    return payment_details
+
+def get_payment_details(db:Session,current_user:int):
+    return db.query(UserPayment).filter(UserPayment.user_id == current_user).all()
+
+

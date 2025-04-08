@@ -1,6 +1,8 @@
 from pydantic import BaseModel,ConfigDict,Field,EmailStr
 from fastapi import Form
 from typing import List,Literal,Optional
+from datetime import date
+from datetime import datetime
 
 password_regex = r"^[A-Za-z\d!@#$%^&*()_+=-]{8,}$"
 
@@ -15,13 +17,18 @@ class UserCreate:
         self,
         username: str = Form(...),
         email: EmailStr = Form(...),
-        password: str = Form(..., min_length=8, regex=password_regex),
-        role: Literal["User", "Admin"] = Form("User")
+        hashed_password: str = Form(..., min_length=8, regex=password_regex),
+        role: Literal["User", "Admin"] = Form("User"),
+        type_id:Optional[int]=1,
+        permission:Literal["can_edit","cannot_edit"]="can_edit"
+
     ):
         self.username = username
         self.email = email
-        self.password = password
+        self.hashed_password = hashed_password
         self.role = role
+        self.type_id=type_id
+        self.permission=permission
 
 class UserResponse(BaseModel):
     name: str
@@ -49,16 +56,43 @@ class UserAddressResponse(BaseModel):
 
 class UserAddressListResponse(BaseModel):
     detail: List[UserAddressResponse]
-class ProductResponse(BaseModel):
-    id: int
-    name: str
-    price: int
-    description: str
-    user: UserResponse
-      
+
+class UserPaymentDetails:
+    def __init__(
+        self,
+        payment_type:str=Form(...,max_length=255),
+        provider:str=Form(...,max_length=255),
+        account_no:str=Form(...,max_length=16),
+        expiry:date=Form(...)
+    ):
+       self.payment_type=payment_type
+       self.provider=provider
+       self.account_no=account_no
+       self.expiry=expiry 
+
+class UserPaymentDetailsResponse(BaseModel):
+     id: int
+     user_id: int
+     payment_type: str
+     provider: str
+     account_no: str
+     expiry: date
+     user:UserResponse
+     model_config = ConfigDict(from_attributes=True)
+
+class PaymentListResponse(BaseModel):
+    detail:List[UserPaymentDetailsResponse]
     model_config = ConfigDict(from_attributes=True)
 
-class CreateProduct(BaseModel):
-    name: str=Field(...,max_length=50,min_length=5)
-    price: int=Field(...,gt=0)
-    description: str=Field(...,max_length=200,min_length=5)
+class AdminTypeBase(BaseModel):
+    admin_type: str
+    permission: str
+
+class AdminTypeCreate(AdminTypeBase):
+    pass
+
+class AdminTypeResponse(AdminTypeBase):
+    id: int
+    created_at: Optional[datetime]
+    modified_at: Optional[datetime]
+    model_config = ConfigDict(from_attributes=True) 
