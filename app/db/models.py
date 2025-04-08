@@ -13,8 +13,8 @@ class User(Base):
     role=Column(String(255) ,default="user",nullable=False)
     is_verified=Column(Boolean,default=False,nullable=False)
     type_id=Column(Integer, ForeignKey("admin_type.id",ondelete="CASCADE"),nullable=False)
-    permission=Column(String(255),nullable=False)
-
+     
+    user_type=relationship("AdminType",back_populates="users")
     address=relationship("UserAddress",back_populates="user",cascade="all, delete-orphan")
     payment=relationship("UserPayment",back_populates="user",cascade="all, delete-orphan")
 
@@ -53,6 +53,8 @@ class AdminType(Base):
     permission=Column(String(255),nullable=False)
     created_at=Column(DateTime(timezone=True), server_default=func.now())
     modified_at=Column(DateTime(timezone=True), server_default=func.now())
+
+    users=relationship("User",back_populates="user_type")
 
 
 

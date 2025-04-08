@@ -12,9 +12,11 @@ def get_current_user(token: security.HTTPAuthorizationCredentials = Depends(oaut
     try:
         payload = jwt.decode(token.credentials, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         user_id:int=payload.get("user_id")
+        role:str=payload.get("role")
+        permission:str=payload.get("permission")
         if user_id is None:
             raise HTTPException(status_code=401, detail="Invalid authentication credentials")
-        token_data = {"user_id": user_id}
+        token_data = {"user_id": user_id,"role":role,"permission":permission}
     except JWTError :
         raise HTTPException(status_code=401, detail="Invalid authentication credentials")
     return token_data

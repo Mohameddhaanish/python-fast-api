@@ -6,9 +6,6 @@ from datetime import datetime
 
 password_regex = r"^[A-Za-z\d!@#$%^&*()_+=-]{8,}$"
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
@@ -19,8 +16,7 @@ class UserCreate:
         email: EmailStr = Form(...),
         hashed_password: str = Form(..., min_length=8, regex=password_regex),
         role: Literal["User", "Admin"] = Form("User"),
-        type_id:Optional[int]=1,
-        permission:Literal["can_edit","cannot_edit"]="can_edit"
+        type_id:Optional[int]=Form(1),
 
     ):
         self.username = username
@@ -28,12 +24,27 @@ class UserCreate:
         self.hashed_password = hashed_password
         self.role = role
         self.type_id=type_id
-        self.permission=permission
 
-class UserResponse(BaseModel):
-    name: str
+class AdminTypeSchema(BaseModel):
+    id: int
+    admin_type: str
+    permission:str
     model_config = ConfigDict(from_attributes=True)
 
+class UserResponse(BaseModel):
+    id: int
+    name: str
+    email: str
+    role: str
+    is_verified: bool
+    type_id: int
+    user_type: Optional[AdminTypeSchema]
+    model_config = ConfigDict(from_attributes=True)
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    model_config = ConfigDict(from_attributes=True)
 class UserAddressSchema(BaseModel): 
     address_line1: str = Field(..., max_length=255, )
     address_line2: Optional[str] = Field(None, max_length=255, )

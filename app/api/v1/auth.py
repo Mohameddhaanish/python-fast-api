@@ -8,6 +8,8 @@ from datetime import timedelta
 from app.core.security import create_access_token
 from app.db.schemas import AdminTypeCreate
 from app.services.auth_service import append_admin_type
+from app.services.auth_service import get_current_user
+from app.utils.email import simple_send
 
 router=APIRouter()
 
@@ -24,7 +26,7 @@ async def signUp(user: UserCreate = Depends(), db: Session = Depends(get_db)):
     # Generate JWT Token
     access_expire_time = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"user_id": created_user.id, "user_email": created_user.email, "role": created_user.role,"permission":created_user.permission},
+        data={"user_id": created_user.id, "user_email": created_user.email, "role": created_user.role},
         expires_delta=access_expire_time
     )
 
@@ -37,8 +39,8 @@ async def sign_in(form_data:LoginRequest,db:Session=Depends(get_db)):
    if not user:
     raise HTTPException(status_code=404, detail="Incorrect username or password!")
    access_token_expire=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-   access_token=create_access_token(data={"user_id":user.id,"user_email":user.email, "role": user.role,"permission":user.permission},expires_delta=access_token_expire)
-   return {"access_token":access_token,"token_type":"bearer","user":user.id}
+   access_token=create_access_token(data={"user_id":user.id,"user_email":user.email, "role": user.role,"permission":user.user_type.permission},expires_delta=access_token_expire)
+   return {"access_token":access_token,"token_type":"bearer"}
 
 #Admin Login
 @router.post('/admin/login',response_model=Token)
@@ -47,11 +49,19 @@ async def sign_in(form_data:LoginRequest,db:Session=Depends(get_db)):
    if not user:
     raise HTTPException(status_code=404, detail="Incorrect username or password!")
    access_token_expire=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-   access_token=create_access_token(data={"user_id":user.id,"user_email":user.email, "role": user.role,"permission":user.permission},expires_delta=access_token_expire)
-   return {"access_token":access_token,"token_type":"bearer","user":user.id}
+   access_token=create_access_token(data={"user_id":user.id,"user_email":user.email, "role": user.role,"permission":user.user_type.permission},expires_delta=access_token_expire)
+   return {"access_token":access_token,"token_type":"bearer"}
 
 @router.post("/create_admin_type")
 def create_admin_type( 
     db: Session = Depends(get_db),admin_type_details:AdminTypeCreate=Depends()):
     admin_type=append_admin_type(db=db,admin_type_details=admin_type_details)
     return admin_type
+
+@router.post("/verify_email")
+async def verify_email(current_user:dict=Depends(get_current_user)):
+   if not current_user:
+      raise HTTPException(status_code=401,detail="Unauthorized access")
+   email=current_user['user_email']
+   send_email=simple_send(email=email)
+   return send_email
