@@ -1,4 +1,4 @@
-from fastapi import FastAPI,APIRouter,Depends,HTTPException
+from fastapi import FastAPI,APIRouter,Depends,HTTPException,Query
 from app.db.schemas import Token,UserCreate,LoginRequest
 from sqlalchemy.orm import Session
 from app.db.session import get_db
@@ -9,7 +9,7 @@ from app.core.security import create_access_token
 from app.db.schemas import AdminTypeCreate
 from app.services.auth_service import append_admin_type
 from app.services.auth_service import get_current_user
-from app.utils.email import simple_send
+from app.utils.email import simple_send,final_verification
 
 router=APIRouter()
 
@@ -58,10 +58,14 @@ def create_admin_type(
     admin_type=append_admin_type(db=db,admin_type_details=admin_type_details)
     return admin_type
 
-@router.post("/verify_email")
-async def verify_email(current_user:dict=Depends(get_current_user)):
+@router.post("/verify_user")
+async def verify_email(token,current_user:dict=Depends(get_current_user)):
    if not current_user:
       raise HTTPException(status_code=401,detail="Unauthorized access")
-   email=current_user['user_email']
-   send_email=simple_send(email=email)
-   return send_email
+   email=current_user['email']
+   
+   return await simple_send(email=email,token=token)
+
+@router.get("/verify-email/{token}")
+def verify_email(token: str, db: Session = Depends(get_db)):
+    return final_verification(token, db)

@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.db.models import User
 from app.db.schemas import AdminTypeCreate
 from app.db.models import AdminType
+from app.db.session import get_db
 
 oauth2_scheme=security.HTTPBearer()
 
@@ -14,30 +15,26 @@ def get_current_user(token: security.HTTPAuthorizationCredentials = Depends(oaut
         user_id:int=payload.get("user_id")
         role:str=payload.get("role")
         permission:str=payload.get("permission")
+        email:str=payload.get("user_email")
         if user_id is None:
             raise HTTPException(status_code=401, detail="Invalid authentication credentials")
-        token_data = {"user_id": user_id,"role":role,"permission":permission}
+        token_data = {"user_id": user_id,"role":role,"permission":permission,"email":email}
     except JWTError :
         raise HTTPException(status_code=401, detail="Invalid authentication credentials")
     return token_data
 
-async def verify_email(token: str,db:Session):
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        user_id = payload.get("user_id")
-        if user_id is None:
-            raise HTTPException(status_code=400, detail="Invalid token")
+def check_verified_user(current_user:dict=Depends(get_current_user),db:Session=Depends(get_db)):
+    if not current_user:
+        raise HTTPException(status_code=401,detail="Unauthorized access")
+    user=db.query(User).filter(User.id == current_user["user_id"]).first()
 
-        user = db.query(User).filter(User.id == user_id).first()
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-        
-        user.is_verified = True
-        db.commit()
-        return {"message": "Email verified successfully"}
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=403,
+            detail="Email not verified. Please verify your email to proceed."
+        )
+    return user
 
-    except JWTError:
-        raise HTTPException(status_code=400, detail="Invalid or expired token")
     
 def append_admin_type(db:Session,admin_type_details:AdminTypeCreate):
     admin_type_detail=AdminType(**admin_type_details.__dict__)
