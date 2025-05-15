@@ -35,7 +35,16 @@ def check_verified_user(current_user:dict=Depends(get_current_user),db:Session=D
         )
     return user
 
-    
+def check_admin_seller(role:str):
+    def role_checker(user: User = Depends(check_verified_user)):
+        if user.role != role:
+            raise HTTPException(
+                status_code=403,
+                detail="You are not authorized to perform this action"
+            )
+        return user
+    return role_checker
+
 def append_admin_type(db:Session,admin_type_details:AdminTypeCreate):
     admin_type_detail=AdminType(**admin_type_details.__dict__)
     db.add(admin_type_detail)

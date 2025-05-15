@@ -1,71 +1,31 @@
-from fastapi import FastAPI,APIRouter,Depends,HTTPException,Query
-from app.db.schemas import Token,UserCreate,LoginRequest
-from sqlalchemy.orm import Session
-from app.db.session import get_db
-from app.db.crud import create_user,get_user_by_userName,authenticate_user
-from app.core.config import settings
-from datetime import timedelta
-from app.core.security import create_access_token
-from app.db.schemas import AdminTypeCreate
-from app.services.auth_service import append_admin_type
-from app.services.auth_service import get_current_user
-from app.utils.email import simple_send,final_verification
+from passlib.context import CryptContext
+import jwt
+from datetime import datetime, timedelta
 
-router=APIRouter()
+SECRET_KEY = "nadhandaleo"  # Use ENV variables in production
+ALGORITHM = "HS256"
 
-@router.post('/signup', response_model=Token)
-async def signUp(user: UserCreate = Depends(), db: Session = Depends(get_db)):
-    # Check if user already exists
-    db_user = get_user_by_userName(db, user.username,user.role)
-    if db_user:
-        raise HTTPException(status_code=400, detail="User Already Registered")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-    # Create user in the database and retrieve the created user
-    created_user = create_user(db, user)  
+# Hash password
+def hash_password(password: str):
+    return pwd_context.hash(password)
 
-    # Generate JWT Token
-    access_expire_time = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"user_id": created_user.id, "user_email": created_user.email, "role": created_user.role},
-        expires_delta=access_expire_time
-    )
+# Verify password
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
 
-    return {"access_token": access_token, "token_type": "bearer"}  # Or `created_user.id`
+# Generate JWT Token
+def create_access_token(data: dict, expires_delta: timedelta):
+    to_encode = data.copy()
+    expire = datetime.now() + expires_delta
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-#User Login
-@router.post('/user/login',response_model=Token)
-async def sign_in(form_data:LoginRequest,db:Session=Depends(get_db)):
-   user=authenticate_user(db=db,username=form_data.email,password=form_data.password,role="User")
-   if not user:
-    raise HTTPException(status_code=404, detail="Incorrect username or password!")
-   access_token_expire=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-   access_token=create_access_token(data={"user_id":user.id,"user_email":user.email, "role": user.role,"permission":user.user_type.permission},expires_delta=access_token_expire)
-   return {"access_token":access_token,"token_type":"bearer"}
-
-#Admin Login
-@router.post('/admin/login',response_model=Token)
-async def sign_in(form_data:LoginRequest,db:Session=Depends(get_db)):
-   user=authenticate_user(db=db,username=form_data.email,password=form_data.password,role="Admin")
-   if not user:
-    raise HTTPException(status_code=404, detail="Incorrect username or password!")
-   access_token_expire=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-   access_token=create_access_token(data={"user_id":user.id,"user_email":user.email, "role": user.role,"permission":user.user_type.permission},expires_delta=access_token_expire)
-   return {"access_token":access_token,"token_type":"bearer"}
-
-@router.post("/create_admin_type")
-def create_admin_type( 
-    db: Session = Depends(get_db),admin_type_details:AdminTypeCreate=Depends()):
-    admin_type=append_admin_type(db=db,admin_type_details=admin_type_details)
-    return admin_type
-
-@router.post("/verify_user")
-async def verify_email(token,current_user:dict=Depends(get_current_user)):
-   if not current_user:
-      raise HTTPException(status_code=401,detail="Unauthorized access")
-   email=current_user['email']
-   
-   return await simple_send(email=email,token=token)
-
-@router.get("/verify-email/{token}")
-def verify_email(token: str, db: Session = Depends(get_db)):
-    return final_verification(token, db)
+# Decode JWT Token
+def decode_access_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except jwt.ExpiredSignatureError:
+        return None

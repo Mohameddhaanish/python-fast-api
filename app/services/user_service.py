@@ -11,8 +11,6 @@ def create_user_address(db:Session,user_address_details:UserAddressSchema,curren
     return user_address
 
 def get_user_address(db:Session,current_user:int):
-    # return db.query(UserAddress).options(joinedload(UserAddress.user)).filter(UserAddress.user_id == current_user).all()
-    # return db.query(User,UserAddress).outerjoin(UserAddress,User.id==UserAddress.user_id).filter(User.id==current_user).all()
     return db.query(UserAddress).filter(UserAddress.user_id == current_user).all() 
 
 def add_payment_details(db:Session,current_user:int,payment_details:UserPaymentDetails):
