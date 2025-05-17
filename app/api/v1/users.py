@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends,HTTPException
+from fastapi import APIRouter, Depends,HTTPException,responses
 from sqlalchemy.orm import Session
 from app.db.models import User
 from app.db.schemas import UserCreate, UserResponse,VerificationResponse
@@ -7,9 +7,10 @@ from app.core.security import get_current_user
 from app.api.v1 import auth
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from app.core.config import settings
-import os
-router = APIRouter()
+from app.utils.decryptPassword import decrypt_password
+import secrets
 
+router = APIRouter()
 conf = ConnectionConfig(
     MAIL_USERNAME="mohameddhaanish@techmango.net" ,
     MAIL_PASSWORD=settings.GOOGLE_APP_KEY,
@@ -40,7 +41,7 @@ async def create_user(user: UserCreate, db: Session = Depends(get_db)):
     message = MessageSchema(
         subject="Verify Your Email",
         recipients=[db_user.email],
-        body=f"Click to verify: http://localhost:8000/auth/verify/{db_user.verification_token}",
+        body=f"Click to verify: http://localhost:8000/api/v1/users/verify/{db_user.verification_token}",
         subtype="html"
     )
     
@@ -50,7 +51,7 @@ async def create_user(user: UserCreate, db: Session = Depends(get_db)):
     return db_user
 
 
-@router.get("/verify/{token}", response_model=VerificationResponse)
+@router.get("/verify/{token}", include_in_schema=False)
 def verify_email(token: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.verification_token == token).first()
     
@@ -62,9 +63,55 @@ def verify_email(token: str, db: Session = Depends(get_db)):
     user.verification_token = None
     db.commit()
 
-    return {"message": "Verification successful!"}
+    return responses.RedirectResponse("http://localhost:3000/login")
 
 
+@router.post("/checkuser",response_model=VerificationResponse)
+async def check_user(email:str,db:Session=Depends(get_db)):
+    user=db.query(User).filter(User.email == email).first()
+
+    if not user:
+        raise HTTPException(status_code=404,detail="User not found")
+    user.verification_token=secrets.token_hex(16)
+    db.commit()
+
+    message=MessageSchema(
+        subject="Request to Change Password",
+        recipients=[user.email],
+        body=f"Click to change the password:http://localhost:8000/api/v1/users/forgot-password/{user.verification_token}",
+        subtype="html"
+    )
+
+    fm=FastMail(conf)
+    await fm.send_message(message)
+
+    return {"message":"Please check your mail"}
+
+@router.get("/forgot-password/{token}")
+def forgot_password(token:str,db:Session=Depends(get_db)):
+    user=db.query(User).filter(User.verification_token == token).first()
+
+    if not user:
+        raise HTTPException(status_code=404,detail="User not found")
+    
+    return responses.RedirectResponse(f"http://localhost:3000/changePassword/{token}")
+
+
+@router.post("/change-password/{token}")
+def forgot_password(token:str,password:str,db:Session=Depends(get_db)):
+    user=db.query(User).filter(User.verification_token == token).first()
+
+    if not user:
+        raise HTTPException(status_code=404,detail="User not found")
+    
+    decrypted_password = decrypt_password(password)
+    
+    user.hashed_password=auth.hash_password(decrypted_password)
+    user.verification_token=None
+    db.commit()
+    db.refresh(user)
+
+    return {"message":"Password changed successfully"} 
 
 @router.get("/{user_id}", response_model=UserResponse)
 def get_user(user_id: int, db: Session = Depends(get_db)):

@@ -13,7 +13,8 @@ app.add_middleware(
   CORSMiddleware,
   allow_origins=['*'],
   allow_headers=['*'],
-  allow_methods=['*']
+  allow_methods=['*'],
+ allow_credentials=True,
 )
 Base.metadata.create_all(bind=engine)
 
