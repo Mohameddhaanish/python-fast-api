@@ -10,11 +10,11 @@ from app.api.v1.cart import router as cart_router
 
 app = FastAPI()
 app.add_middleware(
-  CORSMiddleware,
-  allow_origins=['*'],
-  allow_headers=['*'],
-  allow_methods=['*'],
- allow_credentials=True,
+    CORSMiddleware,
+    allow_origins=["http://127.0.0.1:3000"],
+    allow_credentials=True, 
+    allow_methods=["*"], 
+    allow_headers=["*"], 
 )
 Base.metadata.create_all(bind=engine)
 
