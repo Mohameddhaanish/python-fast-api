@@ -6,120 +6,6 @@ from datetime import datetime
 import secrets
 
 Base = declarative_base() 
-
-
-# class User(Base):
-#     __tablename__ = 'users'
-
-#     id = Column(Integer, primary_key=True, index=True,autoincrement=True)
-#     name = Column(String(50))
-#     email = Column(String(100), unique=True, index=True)
-#     hashed_password=Column(String(255))
-#     role=Column(String(255) ,default="user",nullable=False)
-#     is_verified=Column(Boolean,default=False,nullable=False)
-#     type_id=Column(Integer, ForeignKey("admin_type.id",ondelete="CASCADE"),nullable=False)
-     
-#     user_type=relationship("AdminType",back_populates="users")
-#     address=relationship("UserAddress",back_populates="user",cascade="all, delete-orphan")
-#     payment=relationship("UserPayment",back_populates="user",cascade="all, delete-orphan")
-
-# class UserAddress(Base):
-#     __tablename__="user_address"
-
-#     id = Column(Integer, primary_key=True, index=True,autoincrement=True)
-#     user_id=Column(Integer,ForeignKey("users.id",ondelete="CASCADE"),index=True)
-#     address_line1=Column(String(255))
-#     address_line2=Column(String(255))
-#     city=Column(String(255))
-#     postal_code=Column(String(255))
-#     country=Column(String(255))
-#     telephone=Column(String(255))
-#     mobile=Column(String(255))
-
-#     user=relationship("User",back_populates="address")
-
-# class UserPayment(Base):
-#     __tablename__="user_payment"
-
-#     id=Column(Integer,primary_key=True,index=True,autoincrement=True)
-#     user_id=Column(Integer,ForeignKey("users.id",ondelete="CASCADE"),index=True)
-#     payment_type=Column(String(255),nullable=False)
-#     provider=Column(String(255),nullable=False)
-#     account_no=Column(String(16),nullable=False)
-#     expiry=Column(Date,nullable=False)
-
-#     user=relationship("User",back_populates="payment")
-
-# class AdminType(Base):
-#     __tablename__="admin_type"
-
-#     id=Column(Integer,primary_key=True,index=True,autoincrement=True)
-#     admin_type=Column(String(255),nullable=False)
-#     permission=Column(String(255),nullable=False)
-#     created_at=Column(DateTime(timezone=True), server_default=func.now())
-#     modified_at=Column(DateTime(timezone=True), server_default=func.now())
-
-#     users=relationship("User",back_populates="user_type")
-
-# class Product(Base):
-#     __tablename__="product"
-
-#     id=Column(Integer,primary_key=True,index=True,autoincrement=True)
-#     name=Column(String(255),unique=True,index=True,nullable=False)
-#     description=Column(Text,nullable=False)
-#     sku=Column(String(255),unique=True,nullable=False,index=True)
-#     category_id=Column(Integer,ForeignKey("category.id"))
-#     inventory_id=Column(Integer,ForeignKey("inventory.id"))
-#     discount_id=Column(Integer,ForeignKey("discount.id"))
-#     price=Column(Float,nullable=False)
-#     image_url=Column(JSON,nullable=False)
-#     created_at=Column(DateTime(timezone=True), server_default=func.now())
-#     modified_at=Column(DateTime(timezone=True), server_default=func.now())
-#     deleted_at=Column(DateTime(timezone=True), server_default=func.now())
-
-#     category = relationship("ProductCategory", back_populates="products")
-#     inventory = relationship("ProductInventory", back_populates="products")
-#     discount = relationship("ProductDiscount", back_populates="products")
-
-# class ProductCategory(Base):
-#     __tablename__="category"
-    
-#     id=Column(Integer,primary_key=True,index=True,autoincrement=True)
-#     name=Column(String(255),unique=True,index=True,nullable=False)
-#     created_at=Column(DateTime(timezone=True), server_default=func.now())
-#     modified_at=Column(DateTime(timezone=True), server_default=func.now())
-#     deleted_at=Column(DateTime(timezone=True), server_default=func.now())
-
-#     products = relationship("Product", back_populates="category")
-
-
-# class ProductInventory(Base):
-#     __tablename__="inventory"
-    
-#     id=Column(Integer,primary_key=True,index=True,autoincrement=True)
-#     quantity=Column(Integer,nullable=False)
-#     created_at=Column(DateTime(timezone=True), server_default=func.now())
-#     modified_at=Column(DateTime(timezone=True), server_default=func.now())
-#     deleted_at=Column(DateTime(timezone=True), server_default=func.now())
-
-#     products = relationship("Product", back_populates="inventory")
-
-# class ProductDiscount(Base):
-#     __tablename__="discount"
-    
-#     id=Column(Integer,primary_key=True,index=True,autoincrement=True)
-#     name=Column(String(255),unique=True,index=True,nullable=False)
-#     description=Column(Text,nullable=False)
-#     discount_percent=Column(Float,nullable=False)
-#     active=Column(Boolean,nullable=False,index=True)
-#     created_at=Column(DateTime(timezone=True), server_default=func.now())
-#     modified_at=Column(DateTime(timezone=True), server_default=func.now())
-#     deleted_at=Column(DateTime(timezone=True), server_default=func.now())
-
-#     products = relationship("Product", back_populates="discount")
-
-#  NEW STORE MODELS
-
 class User(Base):
     __tablename__ = "users"
 
@@ -137,7 +23,14 @@ class User(Base):
     orders = relationship("Order", back_populates="customer", cascade="all, delete")
     cart = relationship("Cart", back_populates="customer", uselist=False, cascade="all, delete")
 
+class Category(Base):
+    __tablename__ = "categories"
 
+    id = Column(Integer, primary_key=True, index=True,autoincrement=True)
+    name = Column(String(255), unique=True, nullable=False)
+
+    # One-to-many relationship with Product
+    products = relationship("Product", back_populates="category", cascade="all, delete")
 class Product(Base):
     __tablename__ = 'products'
 
@@ -146,7 +39,14 @@ class Product(Base):
     description = Column(Text)
     sku = Column(String(255), unique=True, index=True)
     in_stock = Column(Boolean, default=True)
+    image_url=Column(String(255),nullable=True)
+    public_id=Column(String(255),nullable=True)
+    price = Column(Float, nullable=False) 
+    stock=Column(Integer,nullable=True)
+    discounted_price= Column(Float, nullable=False) 
+    category_id = Column(Integer, ForeignKey("categories.id", ondelete="SET NULL"), nullable=True)
 
+    category = relationship("Category", back_populates="products")
     variants = relationship("Variant", back_populates="product", cascade="all, delete")
 
 
@@ -163,6 +63,16 @@ class Variant(Base):
     product = relationship("Product", back_populates="variants")
     inventory_item = relationship("InventoryItem", back_populates="variant", uselist=False, cascade="all, delete")
     order_items = relationship("OrderLineItem", back_populates="variant", cascade="all, delete")
+    images = relationship("VariantImages", back_populates="variant", cascade="all, delete-orphan")
+
+class VariantImages(Base):
+    __tablename__ = "variant_images"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    variant_id = Column(Integer, ForeignKey("variants.id"), nullable=False)
+    image_url = Column(String(500), nullable=False)
+
+    variant = relationship("Variant", back_populates="images")
 
 
 class InventoryItem(Base):

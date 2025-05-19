@@ -13,8 +13,6 @@ def decrypt_password(encrypted_password: str) -> str:
 
     cipher = AES.new(SECRET_KEY, AES.MODE_CBC, iv)
     decrypted = cipher.decrypt(ciphertext)
-
-    print("Raw Decrypted Output:", decrypted)  # 🔥 Debug output before unpadding
-    
+        
     final = unpad(decrypted, AES.block_size).decode("utf-8")  # ✅ Remove padding
     return final
