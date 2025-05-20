@@ -7,6 +7,7 @@ from app.api.v1.products import router as product_router
 from app.api.v1.variants import router as variant_router
 from app.api.v1.orders import router as orders_router
 from app.api.v1.cart import router as cart_router
+from app.api.v1.categories import router as category_router
 
 app = FastAPI()
 app.add_middleware(
@@ -24,6 +25,8 @@ app.include_router(product_router,prefix='/api/v1/products',tags=['Products'])
 app.include_router(variant_router,prefix="/api/v1/variants",tags=["variants"])
 app.include_router(orders_router,prefix="/api/v1/orders",tags=["orders"])
 app.include_router(cart_router,prefix="/api/v1/cart",tags=["cart"])
+app.include_router(category_router,prefix="/api/v1/category",tags=["category"])
+
 
 
 app.mount("/static" ,staticfiles.StaticFiles(directory="static"),name="static")

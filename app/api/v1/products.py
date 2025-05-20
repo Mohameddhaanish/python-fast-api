@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, UploadFile,File,HTTPException,Form
 from sqlalchemy.orm import Session
 import urllib3.util
-from app.db.models import Product,Category
-from app.db.schemas import ProductResponse,CategoryResponse,VariantResponse,AllProductsResponse
+from app.db.models import Product
+from app.db.schemas import ProductResponse,VariantResponse,AllProductsResponse
 from app.db.session import get_db
 import cloudinary.uploader,cloudinary
 from app.core.config import settings
@@ -37,21 +37,6 @@ async def uploadImage(imageFile: UploadFile = File(...)):
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Image upload failed: {str(e)}")
-    
-@router.post("/category",response_model=CategoryResponse)
-def create_category(name:str,db:Session=Depends(get_db)):
-    try:
-        category=Category(name=name)
-        db.add(category)
-        db.commit()
-        db.refresh(category)
-        return category
-    except Exception as e:
-        raise HTTPException(status_code=500,detail=f"Category creation failed: {str(e)}")
-
-@router.get("/get_categories")
-async def get_categories(db:Session=Depends(get_db)):
-    return db.query(Category).all()
 
 @router.post("/", response_model=ProductResponse)
 async def create_product(  title: str = Form(...),
@@ -60,7 +45,11 @@ async def create_product(  title: str = Form(...),
     in_stock: bool = Form(True),
     image_url: UploadFile = File(...),
     category_id:int=Form(...),
+    stock:int=Form(...),
+    price:float=Form(...),
+    discounted_price:float=Form(...),
     db: Session = Depends(get_db),):
+
     try:
         upload=await uploadImage(image_url)
         if not upload :
@@ -73,7 +62,10 @@ async def create_product(  title: str = Form(...),
             "in_stock": in_stock,
             "category_id":category_id,
             "image_url": upload["secure_url"],
-            "public_id":upload["public_id"]
+            "public_id":upload["public_id"],
+            "stock":stock,
+            "price":price,
+            "discounted_price":discounted_price
         }
 
         db_product = Product(**product_details)
@@ -87,6 +79,11 @@ async def create_product(  title: str = Form(...),
 @router.get("/get_all_products",response_model=List[AllProductsResponse])
 def get_all_products(db:Session=Depends(get_db)):
      products= db.query(Product).all()
+     return [AllProductsResponse.model_validate(product) for product in products] 
+
+@router.get("/get_products_by_category/{category_id}",response_model=List[AllProductsResponse])
+def get_all_products_y_categroy(category_id:int,db:Session=Depends(get_db)):
+     products= db.query(Product).filter(Product.category_id == category_id)
      return [AllProductsResponse.model_validate(product) for product in products] 
     
 
@@ -128,6 +125,3 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Product deleted"}
 
-# @router.get("/featured_products")
-# def get_featured_products(db:Session=Depends(get_db)):
-#     db.query(Product).filter(Product.)

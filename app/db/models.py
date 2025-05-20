@@ -28,7 +28,8 @@ class Category(Base):
 
     id = Column(Integer, primary_key=True, index=True,autoincrement=True)
     name = Column(String(255), unique=True, nullable=False)
-
+    image_url=Column(String(255), nullable=True)
+    public_id=Column(String(255),nullable=True)
     # One-to-many relationship with Product
     products = relationship("Product", back_populates="category", cascade="all, delete")
 class Product(Base):
