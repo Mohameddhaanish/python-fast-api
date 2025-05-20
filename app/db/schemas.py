@@ -46,7 +46,7 @@ class CategoryBase(BaseModel):
     name: str
 
 class CategoryCreate(CategoryBase):
-    pass
+    image_url:UploadFile=File(...)
 
 class CategoryResponse(CategoryBase):
     id: int
@@ -62,6 +62,8 @@ class ProductBase(BaseModel):
     in_stock: bool 
     public_id:str
     price:float
+    stock:int
+    discounted_price:float
 class ProductCreate(ProductBase):
     pass
 
