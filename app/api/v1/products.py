@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, UploadFile,File,HTTPException,Form
 from sqlalchemy.orm import Session
 import urllib3.util
-from app.db.models import Product
+from app.db.models import Product,Variant
 from app.db.schemas import ProductResponse,VariantResponse,AllProductsResponse
 from app.db.session import get_db
 import cloudinary.uploader,cloudinary
@@ -72,6 +72,19 @@ async def create_product(  title: str = Form(...),
         db.add(db_product)
         db.commit()
         db.refresh(db_product)
+
+        default_variant = Variant(
+            name=title,
+            product_id=db_product.id,
+            price=price,
+            stock=stock,
+            color="default",
+            discounted_price=discounted_price,
+        )
+        db.add(default_variant)
+        db.commit()
+        db.refresh(default_variant)
+
         return db_product
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to create product: {str(e)}")
@@ -90,7 +103,7 @@ def get_all_products_y_categroy(category_id:int,db:Session=Depends(get_db)):
 @router.get("/{product_id}", response_model=ProductResponse)
 def get_product(product_id: int, db: Session = Depends(get_db)):
     product = db.query(Product).filter(Product.id == product_id).first()
-
+    
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
@@ -100,7 +113,10 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
             product_id=variant.product_id,
             name=variant.name,
             price=variant.price,
-            images=[img.image_url for img in variant.images]
+            images=[img.image_url for img in variant.image_url],
+            color=variant.color,
+            stock=variant.stock,
+            discounted_price=variant.discounted_price
         ) for variant in product.variants
     ]
 

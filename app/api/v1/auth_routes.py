@@ -21,7 +21,7 @@ def login(response:Response,user_data: UserLogin, db: Session = Depends(get_db))
     if not user.is_verified:
         raise HTTPException(status_code=403, detail="Please verify your email")
     
-    access_token = create_access_token({"sub": user.email}, timedelta(minutes=30))
+    access_token = create_access_token({"sub": user.email,"id":user.id}, timedelta(minutes=30))
     response.set_cookie(
         key="access_token",
         value=access_token,

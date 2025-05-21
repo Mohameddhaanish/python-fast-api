@@ -90,22 +90,27 @@ class ProductResponse(ProductBase):
 class VariantBase(BaseModel):
     name: str
     price: float
-    stock: int = 0
+    stock:int
     is_active: bool = True
+    discounted_price:int
 
 class VariantCreate(VariantBase):
     product_id: int
+    color:str
+    
 
 class VariantUpdate(VariantBase):
     name: str | None = None
     price: float | None = None
     stock: int | None = None
     is_active: bool | None = None
+    color:str|None=None
 
 class VariantResponse(VariantBase):
     id: int
     product_id: int
-    images: List[str]  
+    images: List[str]=[]  
+    color:str
 
     class Config:
         from_attributes = True
