@@ -32,7 +32,7 @@ async def post_variant_images(variant_id:int,files: list[UploadFile] = File(...)
     
 @router.get("/variants/{variant_id}", response_model=VariantResponse)
 async def get_variant(variant_id: int, db: Session = Depends(get_db)):
-    variant = db.query(Variant).filter(Variant.id == variant_id).first()
+    variant = db.query(Variant).filter(Variant.id== variant_id).first()
 
     if not variant:
         raise HTTPException(status_code=404, detail="Variant not found")
@@ -43,7 +43,8 @@ async def get_variant(variant_id: int, db: Session = Depends(get_db)):
         id=variant.id,
         product_id=variant.product_id,
         variant_name=variant.name,
-        images=images,
+        image_url=images,
         name=variant.name,
-        price=variant.price
+        price=variant.price,
+        color=variant.color
     )

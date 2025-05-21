@@ -60,11 +60,13 @@ class Variant(Base):
     price = Column(Float, nullable=False)
     stock = Column(Integer, default=0)
     is_active = Column(Boolean, default=True)
-
+    color = Column(String(255),nullable=True)
+    discounted_price=Column(Integer,nullable=True)
+    
     product = relationship("Product", back_populates="variants")
     inventory_item = relationship("InventoryItem", back_populates="variant", uselist=False, cascade="all, delete")
     order_items = relationship("OrderLineItem", back_populates="variant", cascade="all, delete")
-    images = relationship("VariantImages", back_populates="variant", cascade="all, delete-orphan")
+    image_url = relationship("VariantImages", back_populates="variant", cascade="all, delete-orphan")
 
 class VariantImages(Base):
     __tablename__ = "variant_images"
@@ -73,7 +75,7 @@ class VariantImages(Base):
     variant_id = Column(Integer, ForeignKey("variants.id"), nullable=False)
     image_url = Column(String(500), nullable=False)
 
-    variant = relationship("Variant", back_populates="images")
+    variant = relationship("Variant", back_populates="image_url")
 
 
 class InventoryItem(Base):
