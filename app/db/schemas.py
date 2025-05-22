@@ -64,6 +64,7 @@ class ProductBase(BaseModel):
     price:float
     stock:int
     discounted_price:float
+    
 class ProductCreate(ProductBase):
     pass
 
@@ -75,6 +76,8 @@ class ProductUpdate(ProductBase):
 
 class AllProductsResponse(ProductBase):
     id:int
+    default_variant_id:Optional[int]=None
+
     class Config:
         from_attributes = True
 
@@ -93,6 +96,7 @@ class VariantBase(BaseModel):
     stock:int
     is_active: bool = True
     discounted_price:int
+    is_default:bool|None
 
 class VariantCreate(VariantBase):
     product_id: int
@@ -180,13 +184,14 @@ class CartItemBase(BaseModel):
     quantity: int
 
 class CartItemCreate(CartItemBase):
-    cart_id: int
     variant_id: int
 
 class CartItemResponse(CartItemBase):
     id: int
     cart_id: int
     variant_id: int
+    quantity: int
+    variant_items:List[VariantResponse]
 
     class Config:
         from_attributes = True

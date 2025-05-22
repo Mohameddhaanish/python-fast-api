@@ -62,11 +62,13 @@ class Variant(Base):
     is_active = Column(Boolean, default=True)
     color = Column(String(255),nullable=True)
     discounted_price=Column(Integer,nullable=True)
+    is_default=Column(Boolean,nullable=True)
     
     product = relationship("Product", back_populates="variants")
     inventory_item = relationship("InventoryItem", back_populates="variant", uselist=False, cascade="all, delete")
     order_items = relationship("OrderLineItem", back_populates="variant", cascade="all, delete")
     image_url = relationship("VariantImages", back_populates="variant", cascade="all, delete-orphan")
+    cart_items=relationship("CartItem",back_populates="variant", cascade="all, delete-orphan")
 
 class VariantImages(Base):
     __tablename__ = "variant_images"
@@ -132,7 +134,7 @@ class CartItem(Base):
     quantity = Column(Integer)
 
     cart = relationship("Cart", back_populates="cart_items")
-    variant = relationship("Variant")
+    variant = relationship("Variant" ,back_populates="cart_items")
 
 
 
