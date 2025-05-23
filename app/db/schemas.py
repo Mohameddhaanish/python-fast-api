@@ -110,15 +110,6 @@ class VariantUpdate(VariantBase):
     is_active: bool | None = None
     color:str|None=None
 
-class VariantResponse(VariantBase):
-    id: int
-    product_id: int
-    images: List[str]=[]  
-    color:str
-
-    class Config:
-        from_attributes = True
-
 class InventoryItemBase(BaseModel):
     quantity: int
 
@@ -186,12 +177,32 @@ class CartItemBase(BaseModel):
 class CartItemCreate(CartItemBase):
     variant_id: int
 
-class CartItemResponse(CartItemBase):
+class VariantImageResponse(BaseModel):
+    id: int
+    image_url: str
+
+    class Config:
+        from_attributes = True
+
+class VariantResponse(BaseModel):
+    id: int
+    name: str
+    price: float
+    stock: int
+    is_active: bool
+    discounted_price: Optional[float]
+    is_default: Optional[bool]
+    color: Optional[str]
+    images: List[str]=[]
+    class Config:
+        from_attributes = True
+
+class CartItemResponse(BaseModel):
     id: int
     cart_id: int
     variant_id: int
     quantity: int
-    variant_items:List[VariantResponse]
-
+    variant: VariantResponse
+    sub_total:int|None=None
     class Config:
         from_attributes = True
