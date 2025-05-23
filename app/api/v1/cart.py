@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends,HTTPException
-from sqlalchemy.orm import Session
-from app.db.models import Cart, CartItem
-from app.db.schemas import CartResponse,CartItemResponse,CartItemCreate,VariantResponse
+from sqlalchemy.orm import Session,joinedload
+from app.db.models import Cart, CartItem,VariantImages,Variant
+from app.db.schemas import CartResponse,CartItemResponse,CartItemCreate,VariantResponse,VariantImageResponse
 from app.db.session import get_db
 from app.utils.verifyToken import verify_token
 from typing import List
@@ -16,20 +16,38 @@ def get_cart_items(db: Session = Depends(get_db), get_user: dict = Depends(verif
     customer_id = get_user["id"]
     
     cart = db.query(Cart).filter(Cart.customer_id == customer_id).first()
-
     if not cart:
-        raise HTTPException(status_code=404, detail="Cart not found")
+        return []
 
-    cart_items = db.query(CartItem).filter(CartItem.cart_id == cart.id).all()
+    cart_items = (
+      db.query(CartItem)
+      .options(joinedload(CartItem.variant).joinedload(Variant.image_url))
+      .filter(CartItem.cart_id == cart.id)
+      .all()
+    )    
+    for item in cart_items:
+        print("listofimages===>",item.variant.image_url)  # This will be a list of VariantImages objects
+        print("loopofimages==>",[img.image_url for img in item.variant.image_url])  # If you want just URLs
 
     response = []
     for item in cart_items:
         response.append(CartItemResponse(
-            id=item.id,
-            cart_id=item.cart_id,
-            variant_id=item.variant_id,
-            quantity=item.quantity if item.quantity is not None else 1,
-            variant_items=[VariantResponse.from_orm(item.variant)] if item.variant else [] 
+        id=item.id,
+        cart_id=item.cart_id,
+        variant_id=item.variant_id,
+        quantity=item.quantity if item.quantity is not None else 1,
+        sub_total=(item.variant.discounted_price if item.variant.discounted_price else item.variant.price) * item.quantity,
+        variant=VariantResponse(
+            id=item.variant.id,
+            name=item.variant.name,
+            price=item.variant.price,
+            stock=item.variant.stock,
+            is_active=item.variant.is_active,
+            discounted_price=item.variant.discounted_price,
+            is_default=item.variant.is_default,
+            color=item.variant.color,
+            images=[img.image_url for img in item.variant.image_url] if item.variant and item.variant.image_url else []  # ✅ Extract only URLs
+        )
         ))
 
     return response
