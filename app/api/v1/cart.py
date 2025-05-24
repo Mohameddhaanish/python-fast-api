@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends,HTTPException
 from sqlalchemy.orm import Session,joinedload
-from app.db.models import Cart, CartItem,VariantImages,Variant
+from app.db.models import Cart, CartItem,VariantImages,Variant,Product
 from app.db.schemas import CartResponse,CartItemResponse,CartItemCreate,VariantResponse,VariantImageResponse
 from app.db.session import get_db
 from app.utils.verifyToken import verify_token
@@ -21,19 +21,20 @@ def get_cart_items(db: Session = Depends(get_db), get_user: dict = Depends(verif
 
     cart_items = (
       db.query(CartItem)
-      .options(joinedload(CartItem.variant).joinedload(Variant.image_url))
+      .options( joinedload(CartItem.variant)
+            .joinedload(Variant.product)
+            .joinedload(Product.category),
+            joinedload(CartItem.variant).joinedload(Variant.image_url))
       .filter(CartItem.cart_id == cart.id)
       .all()
     )    
-    for item in cart_items:
-        print("listofimages===>",item.variant.image_url)  # This will be a list of VariantImages objects
-        print("loopofimages==>",[img.image_url for img in item.variant.image_url])  # If you want just URLs
-
     response = []
     for item in cart_items:
         response.append(CartItemResponse(
         id=item.id,
         cart_id=item.cart_id,
+        category_id=item.variant.product.category.id if item.variant and item.variant.product else None,
+        category_name=item.variant.product.category.name if item.variant and item.variant.product else None,
         variant_id=item.variant_id,
         quantity=item.quantity if item.quantity is not None else 1,
         sub_total=(item.variant.discounted_price if item.variant.discounted_price else item.variant.price) * item.quantity,
@@ -46,6 +47,8 @@ def get_cart_items(db: Session = Depends(get_db), get_user: dict = Depends(verif
             discounted_price=item.variant.discounted_price,
             is_default=item.variant.is_default,
             color=item.variant.color,
+            in_stock=item.variant.product.in_stock,
+            description=item.variant.product.description,
             images=[img.image_url for img in item.variant.image_url] if item.variant and item.variant.image_url else []  # ✅ Extract only URLs
         )
         ))
@@ -93,7 +96,7 @@ def add_to_cart(
     return existing_item or new_item
 
 
-@router.put("/cart/item/{cart_item_id}", response_model=CartItemResponse)
+@router.put("/item/{cart_item_id}", response_model=CartItemResponse)
 def update_cart_item(cart_item_id: int, quantity: int, db: Session = Depends(get_db)):
     cart_item = db.query(CartItem).filter(CartItem.id == cart_item_id).first()
 
@@ -106,7 +109,7 @@ def update_cart_item(cart_item_id: int, quantity: int, db: Session = Depends(get
 
     return cart_item
 
-@router.delete("/cart/item/{cart_item_id}")
+@router.delete("/item/{cart_item_id}")
 def remove_cart_item(cart_item_id: int, db: Session = Depends(get_db)):
     cart_item = db.query(CartItem).filter(CartItem.id == cart_item_id).first()
 
