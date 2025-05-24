@@ -142,7 +142,9 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
             stock=variant.stock,
             discounted_price=variant.discounted_price,
             is_default=variant.is_default,
-            is_active=variant.is_active
+            is_active=variant.is_active,
+            description=product.description,
+            in_stock=product.in_stock
         ) for variant in product.variants
     ]
 

@@ -29,8 +29,6 @@ class Category(Base):
     image_url = Column(String(255), nullable=True)
     public_id = Column(String(255), nullable=True)
     products = relationship("Product", back_populates="category", cascade="all, delete")
-
-
 class Product(Base):
     __tablename__ = "products"
     id = Column(Integer, primary_key=True, index=True)
@@ -45,8 +43,10 @@ class Product(Base):
     discounted_price = Column(Float, nullable=False)
     category_id = Column(Integer, ForeignKey("categories.id", ondelete="SET NULL"), nullable=True)
 
-    category = relationship("Category", back_populates="products")
     variants = relationship("Variant", back_populates="product", cascade="all, delete")
+    category_id = Column(Integer, ForeignKey("categories.id", ondelete="CASCADE"))
+    category = relationship("Category", back_populates="products")
+
 
 
 class Variant(Base):
@@ -65,8 +65,7 @@ class Variant(Base):
     inventory_item = relationship("InventoryItem", back_populates="variant", uselist=False, cascade="all, delete")
     order_items = relationship("OrderLineItem", back_populates="variant", cascade="all, delete")
     image_url = relationship("VariantImages", back_populates="variant", cascade="all, delete-orphan")
-    cart_items = relationship("CartItem", back_populates="variant", cascade="all, delete-orphan")
-
+    cart_items = relationship("CartItem", back_populates="variant", cascade="all, delete")
 
 class VariantImages(Base):
     __tablename__ = "variant_images"

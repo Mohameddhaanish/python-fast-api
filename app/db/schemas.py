@@ -187,6 +187,8 @@ class VariantImageResponse(BaseModel):
 class VariantResponse(BaseModel):
     id: int
     name: str
+    description: Optional[str]=None
+    in_stock: Optional[bool]=None
     price: float
     stock: int
     is_active: bool
@@ -204,5 +206,7 @@ class CartItemResponse(BaseModel):
     quantity: int
     variant: VariantResponse
     sub_total:int|None=None
+    category_id:int|None=None
+    category_name:str|None=None
     class Config:
         from_attributes = True
