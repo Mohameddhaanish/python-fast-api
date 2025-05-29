@@ -48,7 +48,5 @@ def logout(response: Response):
 
 @router.get("/checkauth")
 def check_authentication(get_token:dict=Depends(verify_token)):
-   if not get_token:
-       raise HTTPException(status_code=401,detail="Unauthorised")
-   return {"message":"User logged in"}
+   return {"authenticated": True, "message": "User is logged in"}
 
